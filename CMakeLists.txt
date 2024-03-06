@@ -30,6 +30,9 @@ find_package(
 message(STATUS "VTK libraries: ${VTK_LIBRARIES}")
 
 add_executable(heat2d heat2d.cpp)
+add_executable(heat2d_parallel heat2d_parallel.cpp)
 
 target_link_libraries(heat2d ${MPI_LIBRARIES})
+target_link_libraries(heat2d_parallel ${MPI_LIBRARIES})
 target_link_libraries(heat2d ${VTK_LIBRARIES})
+target_link_libraries(heat2d_parallel ${VTK_LIBRARIES})
