@@ -38,8 +38,13 @@ void exportMesh(const std::array<double, N*N> & T, const uint64_t  iteration) {
   mesh->GetCellData()->SetScalars(scalar_double_array);
 
   vtkNew<vtkXMLImageDataWriter> writer;
-  std::string mesh_filneame ="/Users/pierrepebay/Documents/Work/ISIMA/ZZ3/parallel-algorithms/tp_final_heat/output/output" + std::to_string(iteration) + ".vti";
-  writer->SetFileName(mesh_filneame.c_str());
+
+  // create output directory if it does not exist
+  std::string command = "mkdir -p output";
+  system(command.c_str());
+
+  std::string mesh_filename ="output/output" + std::to_string(iteration) + ".vti";
+  writer->SetFileName(mesh_filename.c_str());
   writer->SetInputData(mesh);
   writer->Write();
 }
@@ -60,16 +65,16 @@ int main() {
   double cy = 0.1;
 
   for (double & u : T)
-    u = 0.0;
+    u = 1000.0;
 
   uint64_t max_iter = 100;
 
   for (uint64_t iter = 0; iter < max_iter; ++iter) {
     std::array<double, N*N> Tnew{};
-    for (uint64_t i = 0; i < N; ++i) {
-      for (uint64_t j = 0; j < N; ++j) {
+    for (uint64_t j = 0; j < N; ++j) {
+      for (uint64_t i = 0; i < N; ++i) {
         if (i == 0 || i == N - 1 || j == 0 || j == N - 1) {
-          Tnew[cartesianToIndex(i, j)] = 1000.0;
+          Tnew[cartesianToIndex(i, j)] = 0.0;
         } else {
           Tnew[cartesianToIndex(i, j)] = T[cartesianToIndex(i, j)] +
             cx * (T[cartesianToIndex(i + 1, j)] - 2 * T[cartesianToIndex(i, j)] + T[cartesianToIndex(i - 1, j)]) +
