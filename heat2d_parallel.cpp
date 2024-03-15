@@ -19,6 +19,8 @@
 #include <vector>
 #include <array>
 #include <numeric>
+#include <algorithm>
+#include <fstream>
 
 const int N = 6000;
 
