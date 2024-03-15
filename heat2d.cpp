@@ -1,3 +1,4 @@
+#ifdef VTK_AVAILABLE
 #include <vtkNamedColors.h>
 #include <vtkDoubleArray.h>
 #include <vtkCellData.h>
@@ -7,6 +8,7 @@
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
 #include <vtkXMLImageDataWriter.h>
+#endif
 
 #include <iostream>
 #include <array>
@@ -17,6 +19,7 @@ uint64_t cartesianToIndex(uint64_t i, uint64_t j) {
   return j * N + i;
 }
 
+#ifdef VTK_AVAILABLE
 void exportMesh(const std::array<double, N*N> & T, const uint64_t  iteration) {
   vtkNew<vtkNamedColors> colors;
   vtkNew<vtkImageData> mesh;
@@ -48,6 +51,7 @@ void exportMesh(const std::array<double, N*N> & T, const uint64_t  iteration) {
   writer->SetInputData(mesh);
   writer->Write();
 }
+#endif
 
 void printMesh(const std::array<double, N*N> & T) {
   for (uint64_t i = 0; i < N; ++i) {
@@ -83,6 +87,6 @@ int main() {
       }
     }
     T = Tnew;
-    exportMesh(T, iter);
+//    exportMesh(T, iter);
   }
 }
