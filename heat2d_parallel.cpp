@@ -22,19 +22,17 @@
 #include <algorithm>
 #include <fstream>
 
-const int N = 6000;
-
 // Utility function to convert 2D coordinates to a single index in a linear array
 uint64_t cartesianToIndex(uint64_t i, uint64_t j, uint64_t N_local) {
   return j * N_local + i;
 }
 
-void exportDataToText(const std::vector<double> &T, const uint64_t iteration) {
+void exportDataToText(const std::vector<double> &T, const uint64_t iteration, uint64_t N_global) {
   std::ofstream outFile("output/temperature_data_" + std::to_string(iteration) + ".txt");
-  for (uint64_t j = 0; j < N; ++j) {
-    for (uint64_t i = 0; i < N; ++i) {
-      outFile << T[j * N + i];
-      if (i != N - 1) outFile << ", ";
+  for (uint64_t j = 0; j < N_global; ++j) {
+    for (uint64_t i = 0; i < N_global; ++i) {
+      outFile << T[j * N_global + i];
+      if (i != N_global - 1) outFile << ", ";
     }
     outFile << "\n";
   }
@@ -42,16 +40,16 @@ void exportDataToText(const std::vector<double> &T, const uint64_t iteration) {
 }
 
 #ifdef VTK_AVAILABLE
-void renderData(const std::vector<double> &T, const uint64_t iteration) {
+void renderData(const std::vector<double> &T, const uint64_t iteration, uint64_t N_global) {
   vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
-  imageData->SetDimensions(N, N, 1);
+  imageData->SetDimensions(N_global, N_global, 1);
   imageData->AllocateScalars(VTK_DOUBLE, 1);
 
   // Fill image data with temperature values
-  for (int j = 0; j < N; ++j) {
-    for (int i = 0; i < N; ++i) {
+  for (int j = 0; j < N_global; ++j) {
+    for (int i = 0; i < N_global; ++i) {
       double* pixel = static_cast<double*>(imageData->GetScalarPointer(i, j, 0));
-      pixel[0] = T[j * N + i];
+      pixel[0] = T[j * N_global + i];
     }
   }
 
@@ -127,11 +125,23 @@ void exportMesh(const std::vector<double> &T, const uint64_t iteration, uint64_t
 #endif
 
 int main(int argc, char **argv) {
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <grid size>\n";
+    return 1;
+  }
+
+  const int N = std::stoi(argv[1]);
+
+  double start_time, end_time;
+
   MPI_Init(&argc, &argv);
 
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  start_time = MPI_Wtime();
 
   const int N_local = N / size; // Assuming N is divisible by size
   std::vector<double> T_local(N_local * N, 100.0); // Initialize local temperature array
@@ -207,7 +217,19 @@ int main(int argc, char **argv) {
     }
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  end_time = MPI_Wtime();
 
   MPI_Finalize();
+
+  double execution_time = end_time - start_time;
+  if (rank == 0) {
+    std::cout << "Execution time: " << execution_time << " seconds\n";
+  }
+
+  std::ofstream outFile;
+  outFile.open("execution_times.csv", std::ios_base::app); // Append mode
+  outFile << N << "," << size << "," << execution_time << "\n";
+
   return 0;
 }
